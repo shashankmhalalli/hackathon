@@ -1,0 +1,24 @@
+name: Build and push to ECR
+on:
+  push:
+    branches: ["main"]
+    paths: ["app/**"]
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [patient-service, appointment-service]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-south-1
+      - uses: aws-actions/amazon-ecr-login@v2
+      - run: |
+          ECR_URL=$(aws ecr describe-repositories --repository-names "${{ matrix.service }}" --query 'repositories[0].repositoryUri' --output text)
+          docker build -t ${{ matrix.service }}:dev -f app/${{ matrix.service }}/Dockerfile.lambda app/${{ matrix.service }}
+          docker tag ${{ matrix.service }}:dev $ECR_URL:dev
+          docker push $ECR_URL:dev
