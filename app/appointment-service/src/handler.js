@@ -1,3 +1,3 @@
 const serverless = require('serverless-http');
-const app = require('./patient-service'); // or './appointment-service'
+const app = require('appointment-service');
 exports.handler = serverless(app);
